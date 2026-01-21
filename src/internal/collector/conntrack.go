@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,10 +21,10 @@ import (
 // Design notes:
 // - Per-connection metrics are Gauges, because conntrack provides snapshots.
 // - On each refresh we RESET the GaugeVecs, effectively deleting old label pairs.
-// - Total metrics are Counters and are NOT reset between refreshes.
-//   They are incremented by deltas between snapshots.
+// - Total metrics are single Gauges without labels; they are recomputed from
+//   the per-connection snapshot on each refresh.
 //
-// Label set is fixed for all metrics:
+// Label set is fixed for all per-connection metrics:
 //   src, dst, l3protocol, l4protocol, l7protocol, dport
 //
 // For protocols without ports (icmp, etc) we use:
@@ -34,22 +33,18 @@ type ConntrackCollector struct {
 	procfsFS procfs.FS
 	interval time.Duration
 
-	mu   sync.Mutex
-	prev map[key]aggValues
-	seen map[key]struct{}
-
 	// Per-connection snapshot metrics (GaugeVec) - reset on each update.
 	sentPackets  *prometheus.GaugeVec
 	sentBytes    *prometheus.GaugeVec
 	replyPackets *prometheus.GaugeVec
 	replyBytes   *prometheus.GaugeVec
 
-	// Totals (CounterVec) - monotonic, never reset.
-	totalConnections  *prometheus.CounterVec
-	totalSentPackets  *prometheus.CounterVec
-	totalSentBytes    *prometheus.CounterVec
-	totalReplyPackets *prometheus.CounterVec
-	totalReplyBytes   *prometheus.CounterVec
+	// Totals (Gauge) - single instance, recomputed from snapshot.
+	totalConnections  prometheus.Gauge
+	totalSentPackets  prometheus.Gauge
+	totalSentBytes    prometheus.Gauge
+	totalReplyPackets prometheus.Gauge
+	totalReplyBytes   prometheus.Gauge
 
 	stopCh chan struct{}
 	doneCh chan struct{}
@@ -75,8 +70,6 @@ func NewConntrackCollector(procfsFS procfs.FS, interval time.Duration) *Conntrac
 	c := &ConntrackCollector{
 		procfsFS: procfsFS,
 		interval: interval,
-		prev:     map[key]aggValues{},
-		seen:     map[key]struct{}{},
 		stopCh:   make(chan struct{}),
 		doneCh:   make(chan struct{}),
 	}
@@ -98,26 +91,26 @@ func NewConntrackCollector(procfsFS procfs.FS, interval time.Duration) *Conntrac
 		Help: "Number of bytes received (reply direction) for the aggregated conntrack key.",
 	}, labelNames)
 
-	c.totalConnections = prometheus.NewCounterVec(prometheus.CounterOpts{
+	c.totalConnections = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "conntrack_total_connections",
-		Help: "Total number of aggregated conntrack keys observed since exporter start.",
-	}, labelNames)
-	c.totalSentPackets = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Help: "Total number of aggregated conntrack keys in the last snapshot.",
+	})
+	c.totalSentPackets = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "conntrack_total_sent_packets",
-		Help: "Monotonic total of sent packets (original direction), accumulated by deltas between snapshots.",
-	}, labelNames)
-	c.totalSentBytes = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Help: "Total sent packets (original direction) aggregated from the last snapshot.",
+	})
+	c.totalSentBytes = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "conntrack_total_sent_bytes",
-		Help: "Monotonic total of sent bytes (original direction), accumulated by deltas between snapshots.",
-	}, labelNames)
-	c.totalReplyPackets = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Help: "Total sent bytes (original direction) aggregated from the last snapshot.",
+	})
+	c.totalReplyPackets = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "conntrack_total_reply_packets",
-		Help: "Monotonic total of reply packets (reply direction), accumulated by deltas between snapshots.",
-	}, labelNames)
-	c.totalReplyBytes = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Help: "Total reply packets (reply direction) aggregated from the last snapshot.",
+	})
+	c.totalReplyBytes = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "conntrack_total_reply_bytes",
-		Help: "Monotonic total of reply bytes (reply direction), accumulated by deltas between snapshots.",
-	}, labelNames)
+		Help: "Total reply bytes (reply direction) aggregated from the last snapshot.",
+	})
 
 	return c
 }
@@ -257,60 +250,26 @@ func (c *ConntrackCollector) applySnapshot(cur map[key]aggValues) {
 		c.replyBytes.WithLabelValues(labels...).Set(float64(v.ReplyBytes))
 	}
 
-	// Totals require previous snapshot and seen set; protect with a mutex.
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	for k, v := range cur {
-		labels := labelValues(k)
-
-		if _, ok := c.seen[k]; !ok {
-			c.totalConnections.WithLabelValues(labels...).Inc()
-			c.seen[k] = struct{}{}
-		}
-
-		prev := c.prev[k]
-
-		// Accumulate only positive deltas to keep counters monotonic.
-		if d := delta(prev.SentPackets, v.SentPackets); d > 0 {
-			c.totalSentPackets.WithLabelValues(labels...).Add(float64(d))
-		}
-		if d := delta(prev.SentBytes, v.SentBytes); d > 0 {
-			c.totalSentBytes.WithLabelValues(labels...).Add(float64(d))
-		}
-		if d := delta(prev.ReplyPackets, v.ReplyPackets); d > 0 {
-			c.totalReplyPackets.WithLabelValues(labels...).Add(float64(d))
-		}
-		if d := delta(prev.ReplyBytes, v.ReplyBytes); d > 0 {
-			c.totalReplyBytes.WithLabelValues(labels...).Add(float64(d))
-		}
+	// Totals are aggregated from the same snapshot, without labels.
+	var totalSentPackets uint64
+	var totalSentBytes uint64
+	var totalReplyPackets uint64
+	var totalReplyBytes uint64
+	for _, v := range cur {
+		totalSentPackets += v.SentPackets
+		totalSentBytes += v.SentBytes
+		totalReplyPackets += v.ReplyPackets
+		totalReplyBytes += v.ReplyBytes
 	}
 
-	// Drop prev entries for keys that no longer exist.
-	// If a key disappears and later re-appears (new connections),
-	// we want to treat the new snapshot as a fresh baseline.
-	for k := range c.prev {
-		if _, ok := cur[k]; !ok {
-			delete(c.prev, k)
-		}
-	}
-
-	// Replace prev snapshot with current values.
-	for k, v := range cur {
-		c.prev[k] = v
-	}
+	c.totalConnections.Set(float64(len(cur)))
+	c.totalSentPackets.Set(float64(totalSentPackets))
+	c.totalSentBytes.Set(float64(totalSentBytes))
+	c.totalReplyPackets.Set(float64(totalReplyPackets))
+	c.totalReplyBytes.Set(float64(totalReplyBytes))
 }
 
 func labelValues(k key) []string {
 	return []string{k.Src, k.Dst, k.L3, k.L4, k.L7, k.DPort}
-}
-
-func delta(prev, cur uint64) uint64 {
-	if cur < prev {
-		// Counter reset in conntrack table (connection restart),
-		// or key baseline was dropped; treat as 0 to preserve monotonicity.
-		return 0
-	}
-	return cur - prev
 }
 

@@ -75,6 +75,4 @@ Temporary Items
 # Develop process files
 .archive
 .code
-Makefile
-docker
 
