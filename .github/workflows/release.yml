@@ -46,13 +46,13 @@ jobs:
           mkdir -p dist
 
           build_one() {
-            local out_suffix="$1" goarch="$2" goarm="${3:-}"
+            local out_suffix="$1" goarch="$2"
             local out_name="conntrack-exporter_${VERSION}_${out_suffix}"
 
             echo "Building ${out_name}..."
             (
               cd src
-              CGO_ENABLED=0 GOOS=linux GOARCH="${goarch}" ${goarm:+GOARM="${goarm}"} \
+              CGO_ENABLED=0 GOOS=linux GOARCH="${goarch}" \
                 go build -trimpath -buildvcs=false \
                   -ldflags="-s -w -X main.version=${VERSION}" \
                   -o "../dist/${out_name}" \
@@ -64,7 +64,6 @@ jobs:
 
           build_one "linux_amd64" "amd64"
           build_one "linux_arm64" "arm64"
-          build_one "linux_armv7" "arm" "7"
 
       - name: Create GitHub Release and upload artifacts
         uses: softprops/action-gh-release@v2
@@ -102,7 +101,7 @@ jobs:
         with:
           context: .
           file: docker/Dockerfile
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
             VERSION=${{ github.ref_name }}

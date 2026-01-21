@@ -38,7 +38,7 @@ func ParseFlags() Config {
 	flag.StringVar(&cfg.WebTelemetryPath, "web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 	flag.BoolVar(&cfg.WebDisableExporterMetrics, "web.disable-exporter-metrics", false, "Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).")
 	flag.IntVar(&cfg.WebMaxRequests, "web.max-requests", 40, "Maximum number of parallel scrape requests. Use 0 to disable.")
-	flag.Var(&cfg.WebListenAddresses, "web.listen-address", "Addresses on which to expose metrics and web interface. Repeatable for multiple addresses. Examples: :9100 or [::1]:9100")
+	flag.Var(&cfg.WebListenAddresses, "web.listen-address", "Addresses on which to expose metrics and web interface. Repeatable for multiple addresses. Examples: :9095 or [::1]:9095")
 
 	flag.StringVar(&cfg.LogLevel, "log.level", "info", "Only log messages with the given severity or above. One of: [debug, info, warn, error]")
 	flag.StringVar(&cfg.LogFormat, "log.format", "logfmt", "Output format of log messages. One of: [logfmt, json]")
@@ -56,7 +56,7 @@ func ParseFlags() Config {
 
 	cfg.CollectorInterval = time.Duration(*intervalSeconds) * time.Second
 	if len(cfg.WebListenAddresses) == 0 {
-		cfg.WebListenAddresses = append(cfg.WebListenAddresses, ":9100")
+		cfg.WebListenAddresses = append(cfg.WebListenAddresses, ":9095")
 	}
 
 	return cfg
