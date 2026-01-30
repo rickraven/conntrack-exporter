@@ -107,3 +107,4 @@ jobs:
             VERSION=${{ github.ref_name }}
           tags: |
             ${{ secrets.DOCKERHUB_LOGIN }}/conntrack-exporter:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_LOGIN }}/conntrack-exporter:latest
