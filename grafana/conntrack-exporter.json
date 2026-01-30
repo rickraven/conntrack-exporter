@@ -1,0 +1,1272 @@
+{
+    "apiVersion": "dashboard.grafana.app/v2beta1",
+    "kind": "Dashboard",
+    "metadata": {
+      "name": "adxrhmj",
+      "generation": 7,
+      "creationTimestamp": "2026-01-29T06:57:15Z",
+      "labels": {},
+      "annotations": {}
+    },
+    "spec": {
+      "annotations": [
+        {
+          "kind": "AnnotationQuery",
+          "spec": {
+            "builtIn": true,
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "query": {
+              "group": "grafana",
+              "kind": "DataQuery",
+              "spec": {},
+              "version": "v0"
+            }
+          }
+        }
+      ],
+      "cursorSync": "Off",
+      "editable": true,
+      "elements": {
+        "panel-1": {
+          "kind": "Panel",
+          "spec": {
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "conntrack_total_connections{instance=~\"$instance\", job=~\"$job\"}",
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "A"
+                    }
+                  }
+                ],
+                "queryOptions": {},
+                "transformations": []
+              }
+            },
+            "description": "",
+            "id": 1,
+            "links": [],
+            "title": "Total connections",
+            "vizConfig": {
+              "group": "timeseries",
+              "kind": "VizConfig",
+              "spec": {
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "palette-classic"
+                    },
+                    "custom": {
+                      "axisBorderShow": false,
+                      "axisCenteredZero": false,
+                      "axisColorMode": "text",
+                      "axisLabel": "",
+                      "axisPlacement": "auto",
+                      "barAlignment": 0,
+                      "barWidthFactor": 0.6,
+                      "drawStyle": "line",
+                      "fillOpacity": 0,
+                      "gradientMode": "none",
+                      "hideFrom": {
+                        "legend": false,
+                        "tooltip": false,
+                        "viz": false
+                      },
+                      "insertNulls": false,
+                      "lineInterpolation": "smooth",
+                      "lineWidth": 1,
+                      "pointSize": 5,
+                      "scaleDistribution": {
+                        "type": "linear"
+                      },
+                      "showPoints": "never",
+                      "showValues": false,
+                      "spanNulls": false,
+                      "stacking": {
+                        "group": "A",
+                        "mode": "none"
+                      },
+                      "thresholdsStyle": {
+                        "mode": "off"
+                      }
+                    },
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": 0
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    }
+                  },
+                  "overrides": []
+                },
+                "options": {
+                  "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": false
+                  },
+                  "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                  }
+                }
+              },
+              "version": "12.3.0"
+            }
+          }
+        },
+        "panel-10": {
+          "kind": "Panel",
+          "spec": {
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "topk(10, sum by (dst) (increase(conntrack_sent_bytes{job=~\"$job\", instance=~\"$instance\"}[$__range])))",
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "A"
+                    }
+                  }
+                ],
+                "queryOptions": {},
+                "transformations": []
+              }
+            },
+            "description": "Top hosts to which traffic was sent",
+            "id": 10,
+            "links": [],
+            "title": "Top destinations (outbound)",
+            "vizConfig": {
+              "group": "piechart",
+              "kind": "VizConfig",
+              "spec": {
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "palette-classic"
+                    },
+                    "custom": {
+                      "hideFrom": {
+                        "legend": false,
+                        "tooltip": false,
+                        "viz": false
+                      }
+                    },
+                    "unit": "bytes"
+                  },
+                  "overrides": []
+                },
+                "options": {
+                  "displayLabels": [
+                    "name",
+                    "value"
+                  ],
+                  "legend": {
+                    "displayMode": "list",
+                    "placement": "right",
+                    "showLegend": true,
+                    "width": 150
+                  },
+                  "pieType": "pie",
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "sort": "desc",
+                  "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                  }
+                }
+              },
+              "version": "12.3.0"
+            }
+          }
+        },
+        "panel-11": {
+          "kind": "Panel",
+          "spec": {
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "topk(10, sum by (src) (increase(conntrack_sent_bytes{job=~\"$job\", instance=~\"$instance\"}[$__range])))",
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "A"
+                    }
+                  }
+                ],
+                "queryOptions": {},
+                "transformations": []
+              }
+            },
+            "description": "Top hosts which sent traffic",
+            "id": 11,
+            "links": [],
+            "title": "Top sources (outbound)",
+            "vizConfig": {
+              "group": "piechart",
+              "kind": "VizConfig",
+              "spec": {
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "palette-classic"
+                    },
+                    "custom": {
+                      "hideFrom": {
+                        "legend": false,
+                        "tooltip": false,
+                        "viz": false
+                      }
+                    },
+                    "unit": "bytes"
+                  },
+                  "overrides": []
+                },
+                "options": {
+                  "displayLabels": [
+                    "name",
+                    "value"
+                  ],
+                  "legend": {
+                    "displayMode": "list",
+                    "placement": "right",
+                    "showLegend": true,
+                    "values": [],
+                    "width": 150
+                  },
+                  "pieType": "pie",
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "sort": "desc",
+                  "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                  }
+                }
+              },
+              "version": "12.3.0"
+            }
+          }
+        },
+        "panel-12": {
+          "kind": "Panel",
+          "spec": {
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "topk(10, sum by (l7protocol) (increase(conntrack_sent_bytes{job=~\"$job\", instance=~\"$instance\", l7protocol!=\"unknown\"}[$__range])))",
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "A"
+                    }
+                  }
+                ],
+                "queryOptions": {},
+                "transformations": []
+              }
+            },
+            "description": "Top L7 protocols to which traffic was sent\nNote: only well-known services are considered",
+            "id": 12,
+            "links": [],
+            "title": "Top services (outbound)",
+            "vizConfig": {
+              "group": "piechart",
+              "kind": "VizConfig",
+              "spec": {
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "palette-classic"
+                    },
+                    "custom": {
+                      "hideFrom": {
+                        "legend": false,
+                        "tooltip": false,
+                        "viz": false
+                      }
+                    },
+                    "unit": "bytes"
+                  },
+                  "overrides": []
+                },
+                "options": {
+                  "displayLabels": [
+                    "name",
+                    "value"
+                  ],
+                  "legend": {
+                    "displayMode": "list",
+                    "placement": "right",
+                    "showLegend": true,
+                    "values": [],
+                    "width": 150
+                  },
+                  "pieType": "pie",
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "sort": "desc",
+                  "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                  }
+                }
+              },
+              "version": "12.3.0"
+            }
+          }
+        },
+        "panel-13": {
+          "kind": "Panel",
+          "spec": {
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "sum(rate(conntrack_reply_bytes{job=~\"$job\", instance=~\"$instance\"}[$__range])) * 8",
+                          "legendFormat": "inbound summary",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "A"
+                    }
+                  },
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "sum(rate(conntrack_sent_bytes{job=~\"$job\", instance=~\"$instance\"}[$__range])) * 8",
+                          "instant": false,
+                          "legendFormat": "outbound summary",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "B"
+                    }
+                  }
+                ],
+                "queryOptions": {},
+                "transformations": []
+              }
+            },
+            "description": "Note: traffic through NAT is counted twice",
+            "id": 13,
+            "links": [],
+            "title": "Summary traffic",
+            "vizConfig": {
+              "group": "timeseries",
+              "kind": "VizConfig",
+              "spec": {
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "palette-classic"
+                    },
+                    "custom": {
+                      "axisBorderShow": false,
+                      "axisCenteredZero": false,
+                      "axisColorMode": "text",
+                      "axisLabel": "",
+                      "axisPlacement": "auto",
+                      "barAlignment": 0,
+                      "barWidthFactor": 0.6,
+                      "drawStyle": "line",
+                      "fillOpacity": 0,
+                      "gradientMode": "none",
+                      "hideFrom": {
+                        "legend": false,
+                        "tooltip": false,
+                        "viz": false
+                      },
+                      "insertNulls": false,
+                      "lineInterpolation": "smooth",
+                      "lineStyle": {
+                        "fill": "solid"
+                      },
+                      "lineWidth": 2,
+                      "pointSize": 5,
+                      "scaleDistribution": {
+                        "type": "linear"
+                      },
+                      "showPoints": "never",
+                      "showValues": false,
+                      "spanNulls": false,
+                      "stacking": {
+                        "group": "A",
+                        "mode": "none"
+                      },
+                      "thresholdsStyle": {
+                        "mode": "off"
+                      }
+                    },
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": 0
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "binbps"
+                  },
+                  "overrides": []
+                },
+                "options": {
+                  "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                  },
+                  "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                  }
+                }
+              },
+              "version": "12.3.0"
+            }
+          }
+        },
+        "panel-6": {
+          "kind": "Panel",
+          "spec": {
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "topk(10, sum by (dst) (increase(conntrack_reply_bytes{job=~\"$job\", instance=~\"$instance\"}[$__range])))",
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "A"
+                    }
+                  }
+                ],
+                "queryOptions": {},
+                "transformations": []
+              }
+            },
+            "description": "Top hosts from which the traffic was received",
+            "id": 6,
+            "links": [],
+            "title": "Top destinations (inbound)",
+            "vizConfig": {
+              "group": "piechart",
+              "kind": "VizConfig",
+              "spec": {
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "palette-classic"
+                    },
+                    "custom": {
+                      "hideFrom": {
+                        "legend": false,
+                        "tooltip": false,
+                        "viz": false
+                      }
+                    },
+                    "unit": "bytes"
+                  },
+                  "overrides": []
+                },
+                "options": {
+                  "displayLabels": [
+                    "name",
+                    "value"
+                  ],
+                  "legend": {
+                    "displayMode": "list",
+                    "placement": "right",
+                    "showLegend": true,
+                    "width": 150
+                  },
+                  "pieType": "pie",
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "sort": "desc",
+                  "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                  }
+                }
+              },
+              "version": "12.3.0"
+            }
+          }
+        },
+        "panel-7": {
+          "kind": "Panel",
+          "spec": {
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "topk(10, sum by (src) (increase(conntrack_reply_bytes{job=~\"$job\", instance=~\"$instance\"}[$__range])))",
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "A"
+                    }
+                  }
+                ],
+                "queryOptions": {},
+                "transformations": []
+              }
+            },
+            "description": "Top hosts which received traffic",
+            "id": 7,
+            "links": [],
+            "title": "Top sources (inbound)",
+            "vizConfig": {
+              "group": "piechart",
+              "kind": "VizConfig",
+              "spec": {
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "palette-classic"
+                    },
+                    "custom": {
+                      "hideFrom": {
+                        "legend": false,
+                        "tooltip": false,
+                        "viz": false
+                      }
+                    },
+                    "unit": "bytes"
+                  },
+                  "overrides": []
+                },
+                "options": {
+                  "displayLabels": [
+                    "name",
+                    "value"
+                  ],
+                  "legend": {
+                    "displayMode": "list",
+                    "placement": "right",
+                    "showLegend": true,
+                    "values": [],
+                    "width": 150
+                  },
+                  "pieType": "pie",
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "sort": "desc",
+                  "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                  }
+                }
+              },
+              "version": "12.3.0"
+            }
+          }
+        },
+        "panel-8": {
+          "kind": "Panel",
+          "spec": {
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "topk(10, sum by (l7protocol) (increase(conntrack_reply_bytes{job=~\"$job\", instance=~\"$instance\", l7protocol!=\"unknown\"}[$__range])))",
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "A"
+                    }
+                  }
+                ],
+                "queryOptions": {},
+                "transformations": []
+              }
+            },
+            "description": "Top L7 protocols through which traffic was received\nNote: only well-known services are considered",
+            "id": 8,
+            "links": [],
+            "title": "Top services (inbound)",
+            "vizConfig": {
+              "group": "piechart",
+              "kind": "VizConfig",
+              "spec": {
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "palette-classic"
+                    },
+                    "custom": {
+                      "hideFrom": {
+                        "legend": false,
+                        "tooltip": false,
+                        "viz": false
+                      }
+                    },
+                    "unit": "bytes"
+                  },
+                  "overrides": []
+                },
+                "options": {
+                  "displayLabels": [
+                    "name",
+                    "value"
+                  ],
+                  "legend": {
+                    "displayMode": "list",
+                    "placement": "right",
+                    "showLegend": true,
+                    "values": [],
+                    "width": 150
+                  },
+                  "pieType": "pie",
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "sort": "desc",
+                  "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                  }
+                }
+              },
+              "version": "12.3.0"
+            }
+          }
+        },
+        "panel-9": {
+          "kind": "Panel",
+          "spec": {
+            "data": {
+              "kind": "QueryGroup",
+              "spec": {
+                "queries": [
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "label_replace(increase(conntrack_sent_bytes{job=~\"$job\", instance=~\"$instance\"}[$__range]), \"metric_name\", \"conntrack_sent_bytes\", \"\", \"\") ",
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "A"
+                    }
+                  },
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "label_replace(increase(conntrack_sent_packets{job=~\"$job\", instance=~\"$instance\"}[$__range]), \"metric_name\", \"conntrack_sent_packets\", \"\", \"\")",
+                          "instant": false,
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "B"
+                    }
+                  },
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "label_replace(increase(conntrack_reply_bytes{job=~\"$job\", instance=~\"$instance\"}[$__range]), \"metric_name\", \"conntrack_reply_bytes\", \"\", \"\")",
+                          "instant": false,
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "C"
+                    }
+                  },
+                  {
+                    "kind": "PanelQuery",
+                    "spec": {
+                      "hidden": false,
+                      "query": {
+                        "group": "prometheus",
+                        "kind": "DataQuery",
+                        "spec": {
+                          "editorMode": "code",
+                          "expr": "label_replace(increase(conntrack_reply_packets{job=~\"$job\", instance=~\"$instance\"}[$__range]), \"metric_name\", \"conntrack_reply_packets\", \"\", \"\")",
+                          "instant": false,
+                          "legendFormat": "__auto",
+                          "range": true
+                        },
+                        "version": "v0"
+                      },
+                      "refId": "D"
+                    }
+                  }
+                ],
+                "queryOptions": {},
+                "transformations": [
+                  {
+                    "kind": "reduce",
+                    "spec": {
+                      "id": "reduce",
+                      "options": {
+                        "includeTimeField": true,
+                        "mode": "reduceFields",
+                        "reducers": [
+                          "last"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "kind": "labelsToFields",
+                    "spec": {
+                      "id": "labelsToFields",
+                      "options": {
+                        "valueLabel": "metric_name"
+                      }
+                    }
+                  },
+                  {
+                    "kind": "merge",
+                    "spec": {
+                      "id": "merge",
+                      "options": {}
+                    }
+                  },
+                  {
+                    "kind": "calculateField",
+                    "spec": {
+                      "id": "calculateField",
+                      "options": {
+                        "alias": "connection",
+                        "mode": "reduceRow",
+                        "reduce": {
+                          "include": [
+                            "dport",
+                            "dst",
+                            "src"
+                          ],
+                          "reducer": "sum"
+                        },
+                        "replaceFields": false
+                      }
+                    }
+                  },
+                  {
+                    "kind": "joinByField",
+                    "spec": {
+                      "id": "joinByField",
+                      "options": {
+                        "byField": "connection",
+                        "mode": "outer"
+                      }
+                    }
+                  },
+                  {
+                    "kind": "organize",
+                    "spec": {
+                      "id": "organize",
+                      "options": {
+                        "excludeByName": {
+                          "Time": true,
+                          "connection": true,
+                          "instance": true,
+                          "job": true
+                        },
+                        "includeByName": {},
+                        "indexByName": {
+                          "connection": 0,
+                          "conntrack_reply_bytes": 11,
+                          "conntrack_reply_packets": 12,
+                          "conntrack_sent_bytes": 9,
+                          "conntrack_sent_packets": 10,
+                          "dport": 3,
+                          "dst": 2,
+                          "instance": 4,
+                          "job": 5,
+                          "l3protocol": 6,
+                          "l4protocol": 7,
+                          "l7protocol": 8,
+                          "src": 1
+                        },
+                        "renameByName": {
+                          "__name__": "",
+                          "conntrack_reply_bytes": "reply bytes",
+                          "conntrack_reply_packets": "reply packets",
+                          "conntrack_sent_bytes": "sent bytes",
+                          "conntrack_sent_packets": "sent packets",
+                          "l3protocol": "l3 protocol",
+                          "l4protocol": "l4 protocol",
+                          "l7protocol": "l7 protocol"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "description": "",
+            "id": 9,
+            "links": [],
+            "title": "Connections list",
+            "vizConfig": {
+              "group": "table",
+              "kind": "VizConfig",
+              "spec": {
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "custom": {
+                      "align": "auto",
+                      "cellOptions": {
+                        "type": "auto"
+                      },
+                      "filterable": true,
+                      "footer": {
+                        "reducers": []
+                      },
+                      "inspect": false
+                    },
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": 0
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    }
+                  },
+                  "overrides": [
+                    {
+                      "matcher": {
+                        "id": "byName",
+                        "options": "sent bytes"
+                      },
+                      "properties": [
+                        {
+                          "id": "unit",
+                          "value": "bytes"
+                        }
+                      ]
+                    },
+                    {
+                      "matcher": {
+                        "id": "byName",
+                        "options": "reply bytes"
+                      },
+                      "properties": [
+                        {
+                          "id": "unit",
+                          "value": "bytes"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "options": {
+                  "cellHeight": "sm",
+                  "showHeader": true,
+                  "sortBy": [
+                    {
+                      "desc": true,
+                      "displayName": "reply bytes"
+                    }
+                  ]
+                }
+              },
+              "version": "12.3.0"
+            }
+          }
+        }
+      },
+      "layout": {
+        "kind": "GridLayout",
+        "spec": {
+          "items": [
+            {
+              "kind": "GridLayoutItem",
+              "spec": {
+                "element": {
+                  "kind": "ElementReference",
+                  "name": "panel-1"
+                },
+                "height": 7,
+                "width": 24,
+                "x": 0,
+                "y": 0
+              }
+            },
+            {
+              "kind": "GridLayoutItem",
+              "spec": {
+                "element": {
+                  "kind": "ElementReference",
+                  "name": "panel-13"
+                },
+                "height": 8,
+                "width": 24,
+                "x": 0,
+                "y": 7
+              }
+            },
+            {
+              "kind": "GridLayoutItem",
+              "spec": {
+                "element": {
+                  "kind": "ElementReference",
+                  "name": "panel-6"
+                },
+                "height": 14,
+                "width": 8,
+                "x": 0,
+                "y": 15
+              }
+            },
+            {
+              "kind": "GridLayoutItem",
+              "spec": {
+                "element": {
+                  "kind": "ElementReference",
+                  "name": "panel-7"
+                },
+                "height": 14,
+                "width": 8,
+                "x": 8,
+                "y": 15
+              }
+            },
+            {
+              "kind": "GridLayoutItem",
+              "spec": {
+                "element": {
+                  "kind": "ElementReference",
+                  "name": "panel-8"
+                },
+                "height": 14,
+                "width": 8,
+                "x": 16,
+                "y": 15
+              }
+            },
+            {
+              "kind": "GridLayoutItem",
+              "spec": {
+                "element": {
+                  "kind": "ElementReference",
+                  "name": "panel-10"
+                },
+                "height": 14,
+                "width": 8,
+                "x": 0,
+                "y": 29
+              }
+            },
+            {
+              "kind": "GridLayoutItem",
+              "spec": {
+                "element": {
+                  "kind": "ElementReference",
+                  "name": "panel-11"
+                },
+                "height": 14,
+                "width": 8,
+                "x": 8,
+                "y": 29
+              }
+            },
+            {
+              "kind": "GridLayoutItem",
+              "spec": {
+                "element": {
+                  "kind": "ElementReference",
+                  "name": "panel-12"
+                },
+                "height": 14,
+                "width": 8,
+                "x": 16,
+                "y": 29
+              }
+            },
+            {
+              "kind": "GridLayoutItem",
+              "spec": {
+                "element": {
+                  "kind": "ElementReference",
+                  "name": "panel-9"
+                },
+                "height": 16,
+                "width": 24,
+                "x": 0,
+                "y": 43
+              }
+            }
+          ]
+        }
+      },
+      "links": [],
+      "liveNow": false,
+      "preload": false,
+      "tags": [],
+      "timeSettings": {
+        "autoRefresh": "",
+        "autoRefreshIntervals": [
+          "5s",
+          "10s",
+          "30s",
+          "1m",
+          "5m",
+          "15m",
+          "30m",
+          "1h",
+          "2h",
+          "1d"
+        ],
+        "fiscalYearStartMonth": 0,
+        "from": "now-1h",
+        "hideTimepicker": false,
+        "timezone": "Etc/GMT",
+        "to": "now"
+      },
+      "title": "Conntrack exporter",
+      "variables": [
+        {
+          "kind": "QueryVariable",
+          "spec": {
+            "allowCustomValue": false,
+            "current": {
+              "text": "",
+              "value": ""
+            },
+            "definition": "label_values(conntrack_total_connections,job)",
+            "hide": "dontHide",
+            "includeAll": false,
+            "multi": true,
+            "name": "job",
+            "options": [],
+            "query": {
+              "group": "prometheus",
+              "kind": "DataQuery",
+              "spec": {
+                "qryType": 1,
+                "query": "label_values(conntrack_total_connections,job)",
+                "refId": "PrometheusVariableQueryEditor-VariableQuery"
+              },
+              "version": "v0"
+            },
+            "refresh": "onDashboardLoad",
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": "disabled"
+          }
+        },
+        {
+          "kind": "QueryVariable",
+          "spec": {
+            "allowCustomValue": false,
+            "current": {
+              "text": "",
+              "value": ""
+            },
+            "definition": "label_values(conntrack_total_connections{job=\"$job\"},instance)",
+            "hide": "dontHide",
+            "includeAll": false,
+            "multi": true,
+            "name": "instance",
+            "options": [],
+            "query": {
+              "group": "prometheus",
+              "kind": "DataQuery",
+              "spec": {
+                "qryType": 1,
+                "query": "label_values(conntrack_total_connections{job=\"$job\"},instance)",
+                "refId": "PrometheusVariableQueryEditor-VariableQuery"
+              },
+              "version": "v0"
+            },
+            "refresh": "onDashboardLoad",
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": "disabled"
+          }
+        }
+      ]
+    },
+    "status": {}
+  }
