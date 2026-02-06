@@ -7,13 +7,13 @@ import "strconv"
 // The project requirement:
 // - if port is standard => meaningful name (e.g. 443=https)
 // - otherwise => "unknown"
-// - if protocol doesn't have ports => caller should pass "0" and we return "na"
+//
+// IMPORTANT:
+// For non TCP/UDP protocols the collector must NOT call this function and must
+// export empty strings for both `dport` and `l7protocol`.
 func L7ProtocolFromDPort(dport string) string {
 	if dport == "" {
 		return "unknown"
-	}
-	if dport == "0" {
-		return "na"
 	}
 
 	p, err := strconv.Atoi(dport)

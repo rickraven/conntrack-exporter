@@ -43,8 +43,11 @@ Supported flags:
 - `-h`, `--help`: show help and exit.
 - `-v`, `--version`: show version and exit.
 - `--collector.interval=60`: snapshot refresh interval, seconds.
+- `--collector.get-ptr`: enable reverse DNS lookups (PTR) for destination IPs; results are cached.
 - `--configure.nf_conntrack_acct`: try to set `net.netfilter.nf_conntrack_acct=1` at startup.
 - `--path.procfs="/proc"`: procfs mount point (useful for containers/testing).
+- `--path.mmdbas="/usr/share/conntrack-exporter/as.mmdb"`: MaxMind ASN MMDB file (optional; enables the `as` label when the flag is provided).
+- `--path.mmdbcountry="/usr/share/conntrack-exporter/country.mmdb"`: MaxMind GeoIP Country MMDB file (optional; enables the `country` label when the flag is provided).
 - `--web.telemetry-path="/metrics"`: HTTP path for metrics.
 - `--web.disable-exporter-metrics`: exclude exporter metrics (`promhttp_*`, `process_*`, `go_*`).
 - `--web.max-requests=40`: max parallel requests to `/metrics` (0 disables the limit).
@@ -148,7 +151,7 @@ Totals (recomputed on each snapshot refresh, **without labels**):
 
 ### Labels for per-connection metrics
 
-The label set is fixed:
+Base labels (always present):
 
 - `src`: source IP address
 - `dst`: destination IP address
@@ -157,10 +160,20 @@ The label set is fixed:
 - `dport`: destination port
 - `l7protocol`: well-known destination port name (e.g. `443=https`), otherwise `unknown`
 
-For protocols without ports (e.g. `icmp`) the exporter uses:
+Optional labels (present only when enabled by config):
 
-- `dport="0"`
-- `l7protocol="na"`
+- `as`: autonomous system number, derived from the ASN MMDB (`--path.mmdbas`). If enabled but lookup fails => empty string.
+- `as`: autonomous system derived from the ASN MMDB (`--path.mmdbas`):
+  - If organization is present => `<number>_<organization>` (whitespace is normalized to underscores)
+  - If organization is missing => `<number>`
+  - If enabled but lookup fails => empty string
+- `country`: ISO country code, derived from the GeoIP Country MMDB (`--path.mmdbcountry`). If enabled but lookup fails => empty string.
+- `ptr`: reverse DNS (PTR) for destination IP (`--collector.get-ptr`). If enabled but no PTR exists / lookup fails => empty string.
+
+For protocols other than `tcp`/`udp` (e.g. `icmp`) the exporter uses empty strings:
+
+- `dport=""`
+- `l7protocol=""`
 
 Example metric line:
 

@@ -65,7 +65,11 @@ func Run(cfg config.Config, version string) int {
 		)
 	}
 
-	ctCollector := collector.NewConntrackCollector(pfs, cfg.CollectorInterval)
+	ctCollector := collector.NewConntrackCollector(pfs, cfg.CollectorInterval, collector.Options{
+		MMDBASPath:      cfg.MMDBASPath,
+		MMDBCountryPath: cfg.MMDBCountryPath,
+		GetPTR:          cfg.CollectorGetPTR,
+	})
 	ctCollector.MustRegister(reg)
 
 	ctx, cancel := context.WithCancel(context.Background())

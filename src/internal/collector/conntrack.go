@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"conntrack-exporter/internal/conntrack"
+	"conntrack-exporter/internal/enrich"
 	"conntrack-exporter/internal/ports"
 	"conntrack-exporter/internal/procfs"
 )
@@ -26,12 +27,21 @@ import (
 //
 // Label set is fixed for all per-connection metrics:
 //   src, dst, l3protocol, l4protocol, l7protocol, dport
+// Plus optional labels (present only when enabled by config):
+//   as, country, ptr
 //
-// For protocols without ports (icmp, etc) we use:
-//   dport="0", l7protocol="na"
+// IMPORTANT label rules (AGENTS.md):
+// - Optional labels must be ABSENT if the feature is disabled (no MMDB path / no --collector.get-ptr).
+// - If an optional label exists but the value cannot be obtained, it must be an empty string.
+// - For non TCP/UDP protocols, both l7protocol and dport must be empty strings.
 type ConntrackCollector struct {
 	procfsFS procfs.FS
 	interval time.Duration
+
+	labelNames []string
+	geo        *enrich.GeoCache
+	ptr        *enrich.PTRCache
+	getPTR     bool
 
 	// Per-connection snapshot metrics (GaugeVec) - reset on each update.
 	sentPackets  *prometheus.GaugeVec
@@ -50,7 +60,12 @@ type ConntrackCollector struct {
 	doneCh chan struct{}
 }
 
-var labelNames = []string{"src", "dst", "l3protocol", "l4protocol", "l7protocol", "dport"}
+// Options controls optional enrichment features.
+type Options struct {
+	MMDBASPath      string
+	MMDBCountryPath string
+	GetPTR          bool
+}
 
 type key struct {
 	Src, Dst string
@@ -66,30 +81,46 @@ type aggValues struct {
 	ReplyBytes   uint64
 }
 
-func NewConntrackCollector(procfsFS procfs.FS, interval time.Duration) *ConntrackCollector {
+func NewConntrackCollector(procfsFS procfs.FS, interval time.Duration, opts Options) *ConntrackCollector {
+	labels := baseLabelNames(opts)
+
 	c := &ConntrackCollector{
 		procfsFS: procfsFS,
 		interval: interval,
 		stopCh:   make(chan struct{}),
 		doneCh:   make(chan struct{}),
+		labelNames: labels,
+		getPTR:     opts.GetPTR,
+	}
+
+	// Enrichment caches.
+	//
+	// We treat MMDB open errors as non-fatal: the corresponding label will still exist
+	// (because the path was provided), but values will be empty strings (per spec).
+	if opts.MMDBASPath != "" || opts.MMDBCountryPath != "" {
+		geo, _ := enrich.NewGeoCache(opts.MMDBASPath, opts.MMDBCountryPath)
+		c.geo = geo
+	}
+	if opts.GetPTR {
+		c.ptr = enrich.NewPTRCache(2 * time.Second)
 	}
 
 	c.sentPackets = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "conntrack_sent_packets",
 		Help: "Number of packets sent (original direction) for the aggregated conntrack key.",
-	}, labelNames)
+	}, labels)
 	c.sentBytes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "conntrack_sent_bytes",
 		Help: "Number of bytes sent (original direction) for the aggregated conntrack key.",
-	}, labelNames)
+	}, labels)
 	c.replyPackets = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "conntrack_reply_packets",
 		Help: "Number of packets received (reply direction) for the aggregated conntrack key.",
-	}, labelNames)
+	}, labels)
 	c.replyBytes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "conntrack_reply_bytes",
 		Help: "Number of bytes received (reply direction) for the aggregated conntrack key.",
-	}, labelNames)
+	}, labels)
 
 	c.totalConnections = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "conntrack_total_connections",
@@ -162,8 +193,6 @@ func (c *ConntrackCollector) Stop() {
 
 // UpdateOnce reads conntrack file and updates metrics.
 func (c *ConntrackCollector) UpdateOnce(ctx context.Context) error {
-	_ = ctx // reserved for future (e.g. timeouts around file reads)
-
 	raw, err := c.procfsFS.ReadFile("net/nf_conntrack")
 	if err != nil {
 		return err
@@ -174,7 +203,7 @@ func (c *ConntrackCollector) UpdateOnce(ctx context.Context) error {
 		return err
 	}
 
-	c.applySnapshot(snapshot)
+	c.applySnapshot(ctx, snapshot)
 	return nil
 }
 
@@ -198,13 +227,16 @@ func parseAndAggregate(raw []byte) (map[key]aggValues, error) {
 		}
 		any = true
 
-		dport := e.Original.Dport
-		l7 := ports.L7ProtocolFromDPort(dport)
-
-		// Protocols without ports: use explicit values as agreed.
-		if !e.HasPorts() {
-			dport = "0"
-			l7 = "na"
+		// IMPORTANT (AGENTS.md): for non TCP/UDP protocols, l7protocol and dport
+		// must be empty strings.
+		//
+		// For TCP/UDP we always keep dport (as read from conntrack), and map it to a
+		// conservative L7 name list; if not recognized => "unknown".
+		dport := ""
+		l7 := ""
+		if e.L4Proto == "tcp" || e.L4Proto == "udp" {
+			dport = e.Original.Dport
+			l7 = ports.L7ProtocolFromDPort(dport)
 		}
 
 		k := key{
@@ -234,7 +266,7 @@ func parseAndAggregate(raw []byte) (map[key]aggValues, error) {
 	return out, nil
 }
 
-func (c *ConntrackCollector) applySnapshot(cur map[key]aggValues) {
+func (c *ConntrackCollector) applySnapshot(ctx context.Context, cur map[key]aggValues) {
 	// Reset per-connection metrics (delete previous label pairs).
 	c.sentPackets.Reset()
 	c.sentBytes.Reset()
@@ -243,7 +275,7 @@ func (c *ConntrackCollector) applySnapshot(cur map[key]aggValues) {
 
 	// Update per-connection gauges.
 	for k, v := range cur {
-		labels := labelValues(k)
+		labels := c.labelValues(ctx, k)
 		c.sentPackets.WithLabelValues(labels...).Set(float64(v.SentPackets))
 		c.sentBytes.WithLabelValues(labels...).Set(float64(v.SentBytes))
 		c.replyPackets.WithLabelValues(labels...).Set(float64(v.ReplyPackets))
@@ -269,7 +301,69 @@ func (c *ConntrackCollector) applySnapshot(cur map[key]aggValues) {
 	c.totalReplyBytes.Set(float64(totalReplyBytes))
 }
 
-func labelValues(k key) []string {
-	return []string{k.Src, k.Dst, k.L3, k.L4, k.L7, k.DPort}
+func baseLabelNames(opts Options) []string {
+	labels := []string{"src", "dst", "l3protocol", "l4protocol", "l7protocol", "dport"}
+	if opts.MMDBASPath != "" {
+		labels = append(labels, "as")
+	}
+	if opts.MMDBCountryPath != "" {
+		labels = append(labels, "country")
+	}
+	if opts.GetPTR {
+		labels = append(labels, "ptr")
+	}
+	return labels
+}
+
+func (c *ConntrackCollector) labelValues(ctx context.Context, k key) []string {
+	// Base label values (always present for per-connection metrics).
+	out := make([]string, 0, len(c.labelNames))
+	out = append(out, k.Src, k.Dst, k.L3, k.L4, k.L7, k.DPort)
+
+	// Enrichment is applied to the DESTINATION IP, because the labels are not
+	// direction-qualified (no src_as/dst_as). This is consistent with the common
+	// use-case of classifying "where we connect to".
+	dstIP := k.Dst
+
+	// Optional labels are present only if enabled by config (i.e. created in the metric).
+	// If enabled but lookup fails, we MUST append empty strings.
+	if c.geo != nil {
+		// Presence of labels is controlled by the metric label list; here we just
+		// append values in the same order as baseLabelNames().
+		//
+		// NOTE: We detect whether a label exists by scanning c.labelNames, to keep
+		// label order as the single source of truth.
+		for _, name := range c.labelNames[6:] {
+			switch name {
+			case "as":
+				out = append(out, c.geo.ASN(dstIP))
+			case "country":
+				out = append(out, c.geo.Country(dstIP))
+			case "ptr":
+				// ptr is handled below (needs c.ptr); keep placeholder if geo cache is set but ptr isn't.
+				out = append(out, "")
+			}
+		}
+	} else {
+		// Geo cache disabled; only ptr may be enabled.
+		for _, name := range c.labelNames[6:] {
+			if name == "ptr" {
+				out = append(out, "")
+			}
+		}
+	}
+
+	// If PTR is enabled, override the ptr slot with a cached lookup.
+	if c.getPTR && c.ptr != nil {
+		for i, name := range c.labelNames {
+			if name == "ptr" {
+				// i is the label index; out has same length/order as c.labelNames.
+				out[i] = c.ptr.PTR(ctx, dstIP)
+				break
+			}
+		}
+	}
+
+	return out
 }
 
