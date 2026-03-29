@@ -5,8 +5,8 @@ COPY src/go.mod src/go.sum ./src/
 RUN cd src && go mod download
 COPY src ./src
 
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+ARG TARGETOS
+ARG TARGETARCH
 ARG VERSION=dev
 
 # Build a static binary for the target platform.
